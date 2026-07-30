@@ -1,0 +1,7 @@
+project_id = "uwvschgthdsyevfhdtey"
+
+[functions.generate-email]
+verify_jwt = false
+
+[functions.ai-content]
+verify_jwt = false

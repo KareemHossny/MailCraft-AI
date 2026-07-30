@@ -1,0 +1,169 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Cairo:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 40 33% 98%;
+    --foreground: 192 30% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 192 30% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 192 30% 12%;
+
+    --primary: 173 72% 30%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 168 70% 42%;
+
+    --secondary: 168 30% 94%;
+    --secondary-foreground: 173 60% 22%;
+
+    --muted: 192 16% 95%;
+    --muted-foreground: 192 12% 42%;
+
+    --accent: 38 95% 55%;
+    --accent-foreground: 30 60% 14%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 60% 40%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 30 60% 14%;
+
+    --border: 192 16% 89%;
+    --input: 192 16% 89%;
+    --ring: 173 72% 30%;
+
+    --radius: 0.875rem;
+
+    --gradient-primary: linear-gradient(135deg, hsl(173 72% 30%), hsl(168 70% 42%));
+    --gradient-accent: linear-gradient(135deg, hsl(38 95% 55%), hsl(28 92% 52%));
+    --gradient-hero: linear-gradient(160deg, hsl(192 45% 10%) 0%, hsl(178 55% 14%) 55%, hsl(173 60% 18%) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(40 33% 98%), hsl(168 30% 96%));
+
+    --shadow-sm: 0 1px 2px hsl(192 30% 12% / 0.06);
+    --shadow-md: 0 8px 24px -8px hsl(173 50% 20% / 0.18);
+    --shadow-lg: 0 24px 60px -16px hsl(173 50% 18% / 0.30);
+    --shadow-glow: 0 0 48px hsl(168 70% 42% / 0.35);
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 192 30% 12%;
+    --sidebar-primary: 173 72% 30%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 168 30% 94%;
+    --sidebar-accent-foreground: 173 60% 22%;
+    --sidebar-border: 192 16% 89%;
+    --sidebar-ring: 173 72% 30%;
+  }
+
+  .dark {
+    --background: 192 38% 8%;
+    --foreground: 168 25% 94%;
+
+    --card: 192 32% 11%;
+    --card-foreground: 168 25% 94%;
+
+    --popover: 192 32% 11%;
+    --popover-foreground: 168 25% 94%;
+
+    --primary: 168 70% 45%;
+    --primary-foreground: 192 40% 8%;
+    --primary-glow: 168 70% 52%;
+
+    --secondary: 192 24% 17%;
+    --secondary-foreground: 168 25% 94%;
+
+    --muted: 192 24% 16%;
+    --muted-foreground: 192 12% 60%;
+
+    --accent: 38 92% 56%;
+    --accent-foreground: 30 60% 12%;
+
+    --destructive: 0 62% 48%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 55% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 85% 52%;
+    --warning-foreground: 30 60% 12%;
+
+    --border: 192 20% 20%;
+    --input: 192 20% 20%;
+    --ring: 168 70% 45%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(173 60% 32%), hsl(168 70% 45%));
+    --gradient-accent: linear-gradient(135deg, hsl(38 92% 56%), hsl(28 88% 50%));
+    --gradient-hero: linear-gradient(160deg, hsl(192 45% 7%) 0%, hsl(178 50% 11%) 55%, hsl(173 55% 14%) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(192 38% 8%), hsl(192 32% 11%));
+
+    --shadow-glow: 0 0 48px hsl(168 70% 45% / 0.30);
+
+    --sidebar-background: 192 32% 10%;
+    --sidebar-foreground: 168 25% 94%;
+    --sidebar-primary: 168 70% 45%;
+    --sidebar-primary-foreground: 192 40% 8%;
+    --sidebar-accent: 192 24% 16%;
+    --sidebar-accent-foreground: 168 25% 94%;
+    --sidebar-border: 192 20% 20%;
+    --sidebar-ring: 168 70% 45%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'DM Sans', system-ui, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Sora', system-ui, sans-serif;
+  }
+
+  /* Arabic / RTL typography */
+  [dir="rtl"] body,
+  [dir="rtl"] {
+    font-family: 'Cairo', system-ui, sans-serif;
+  }
+
+  [dir="rtl"] h1,
+  [dir="rtl"] h2,
+  [dir="rtl"] h3,
+  [dir="rtl"] h4,
+  [dir="rtl"] h5,
+  [dir="rtl"] h6 {
+    font-family: 'Cairo', system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .gradient-primary {
+    background-image: var(--gradient-primary);
+  }
+  .gradient-accent {
+    background-image: var(--gradient-accent);
+  }
+  .gradient-hero {
+    background-image: var(--gradient-hero);
+  }
+  .text-gradient {
+    background-image: var(--gradient-primary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+}

@@ -1,0 +1,8 @@
+node_modules
+dist
+build-check
+build-check-*
+build-verification
+vite-dev*.log
+.env
+.agents
