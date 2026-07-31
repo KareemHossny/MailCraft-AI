@@ -1,121 +1,176 @@
-# MailCraft AI
+# MailCraft AI — Bilingual AI Email Generation Platform
 
-MailCraft AI is a bilingual business email assistant for composing, replying to, refining, saving, and reusing professional emails. The app supports English and Arabic, authenticated user workspaces, usage quotas, email history, snippets, account settings, and configurable AI generation.
+![React](https://img.shields.io/badge/React-18-61DAFB?style=flat&logo=react&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-5-646CFF?style=flat&logo=vite&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?style=flat&logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-06B6D4?style=flat&logo=tailwindcss&logoColor=white)
+![shadcn/ui](https://img.shields.io/badge/shadcn%2Fui-Radix-000000?style=flat&logo=shadcnui&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-Auth%20%26%20PostgreSQL-3FCF8E?style=flat&logo=supabase&logoColor=white)
+![Edge Functions](https://img.shields.io/badge/Edge_Functions-Deno-000000?style=flat&logo=deno&logoColor=white)
+![OpenAI](https://img.shields.io/badge/OpenAI-Compatible%20API-412991?style=flat&logo=openai&logoColor=white)
+![Vercel](https://img.shields.io/badge/Vercel-Deployed-000000?style=flat&logo=vercel&logoColor=white)
 
-## Chosen Stack
+React Vite TypeScript Tailwind CSS Supabase Edge Functions Vercel
 
-- Frontend: React 18, Vite, TypeScript, React Router
-- Styling/UI: Tailwind CSS, Radix UI, shadcn-style components
-- Data/auth/runtime services: Supabase client against PostgreSQL, Auth, and Edge Functions
-- Server-side AI: Supabase Edge Functions with an OpenAI-compatible provider interface
-- State/data fetching: TanStack Query plus localized component state
-- Testing/build tooling: Vitest, ESLint, npm
-
-This stack fits the current product because it is a client-heavy SaaS workflow with authenticated dashboards, database-backed history, and lightweight server-side AI endpoints. Vite keeps the UI fast and portable, Supabase maps cleanly to the existing PostgreSQL schema and auth flow, and the AI layer is now provider-configurable through environment variables instead of being tied to any builder platform.
+Production-ready SaaS for generating professional, fact-grounded business emails in English and Arabic. Built with React, Vite, TypeScript, Tailwind CSS, and shadcn/ui on the frontend, with Supabase Auth, PostgreSQL, and Edge Functions on the backend. AI generation runs server-side through an OpenAI-compatible provider with hallucination validation and deterministic fallbacks.
 
 ## Project Structure
 
 ```text
-.
-├── public/                  Static browser assets
-├── src/
-│   ├── assets/              App images and visual assets
-│   ├── components/          Shared application and UI components
-│   ├── config/              Runtime environment configuration
-│   ├── contexts/            Auth and language providers
-│   ├── hooks/               Shared React hooks
-│   ├── i18n/                Translation strings
-│   ├── lib/                 Shared framework utilities
-│   ├── pages/               Route-level screens
-│   ├── services/            External service clients
-│   └── test/                Test setup and examples
-├── supabase/
-│   ├── functions/           Edge functions for AI and protected server logic
-│   └── migrations/          PostgreSQL schema migrations
-├── .env.example             Required environment variable template
-├── package.json             npm scripts and dependencies
-└── vite.config.ts           Vite application config
+src/
+├── App.tsx            → Root component with routes and providers
+├── main.tsx           → Entry point (createRoot + StrictMode)
+├── index.css          → Tailwind, shadcn/ui tokens, global styles
+├── assets/            → Static images and visual assets
+├── components/
+│   ├── ui/            → shadcn/ui primitives (49 components — Radix-based)
+│   ├── AppLayout.tsx  → Authenticated app shell (sidebar + header)
+│   ├── LanguageToggle.tsx → English / Arabic switcher
+│   └── ProtectedRoute.tsx → Auth-gated route wrapper
+├── config/            → Runtime env validation (env.ts)
+├── contexts/          → AuthProvider, LanguageProvider
+├── hooks/             → use-mobile, use-toast
+├── i18n/              → English + Arabic translation dictionary (RTL/LTR)
+├── lib/               → cn() utility, clsx + tailwind-merge
+├── pages/             → Route-level screens (Landing, Generate, History, etc.)
+├── services/
+│   └── supabase/      → Supabase client + generated types
+└── test/              → Vitest setup and tests
+supabase/
+├── functions/
+│   ├── _shared/       → AI provider, prompts, validation service
+│   ├── generate-email/        → Protected generation endpoint
+│   ├── ai-content/            → AI helper endpoint
+│   └── verify-share-password/ → Protected share verification
+└── migrations/        → 12 SQL migrations (profiles, history, quotas, plans)
 ```
 
-## Setup
+## Routes
 
-1. Install dependencies:
+| Path | Page | Description |
+| --- | --- | --- |
+| `/` | Landing | Hero, features, how it works, pricing section, FAQ |
+| `/login` | Login | Sign in with Supabase Auth |
+| `/signup` | Signup | Create an account |
+| `/forgot-password` | ForgotPassword | Password reset request |
+| `/reset-password` | ResetPassword | Set a new password |
+| `/pricing` | Pricing | Free / Pro / Business plan comparison |
+| `/app` | Generate | AI email generator (protected) |
+| `/app/history` | History | Saved drafts, search, favorites, revisions (protected) |
+| `/app/snippets` | Snippets | Reusable text snippets (protected) |
+| `/app/account` | Account | Writing profile and preferences (protected) |
+| `*` | 404 | Fallback — not found |
+
+## Tech Stack
+
+| Category | Tools |
+| --- | --- |
+| Framework | React 18 |
+| Build | Vite 5 |
+| Language | TypeScript 5.8 |
+| Routing | React Router 6 |
+| Styling | Tailwind CSS 3.4, tailwindcss-animate |
+| UI Library | shadcn/ui (49 Radix-based components), Lucide React, Framer Motion |
+| Data Fetching | TanStack Query |
+| Forms / Validation | React Hook Form, Zod |
+| Toasts | Sonner |
+| Export | jsPDF, docx, html2canvas |
+| Backend | Supabase Auth, Supabase PostgreSQL, Supabase Edge Functions (Deno) |
+| AI | OpenAI-compatible chat completions API |
+| Linting / Testing | ESLint 9, Vitest + Testing Library |
+| Deployment | Vercel |
+
+## AI Generation Flow
+
+```text
+User Input → Sanitize → Merge verified profile facts → Generate email JSON
+→ Clean clichés/typos → Grounding / fact validation → Regenerate if unsupported
+→ Deterministic fallback if still unsafe → Return subject lines, email, scores
+```
+
+The AI layer prioritizes trustworthiness over persuasive but unsupported claims, with post-generation validation rather than prompt-only instructions.
+
+## Local Development
 
 ```bash
+# 1. Install dependencies
 npm install
-```
 
-2. Create a local environment file:
-
-```bash
+# 2. Copy environment template
 cp .env.example .env
-```
 
-3. Fill in the Supabase and AI provider values in `.env`.
-
-4. Apply the database migrations, including profile, intelligence-history, and rate-limit fields:
-
-```bash
-npx supabase@latest link --project-ref uwvschgthdsyevfhdtey
-npm run deploy:db
-```
-
-5. Set Edge Function secrets and deploy the protected generation endpoint:
-
-```bash
-npx supabase@latest secrets set --project-ref uwvschgthdsyevfhdtey --env-file .env
-npm run deploy:functions
-```
-
-6. Start the development server:
-
-```bash
+# 3. Start dev server
 npm run dev
+
+# 4. Open in browser
+open http://localhost:8080
 ```
 
-7. Build for production:
+## Available Scripts
+
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start Vite dev server with HMR |
+| `npm run build` | Production build to `dist/` |
+| `npm run build:dev` | Build in development mode |
+| `npm run preview` | Preview production build locally |
+| `npm run lint` | Run ESLint across the project |
+| `npm run test` | Run Vitest once |
+| `npm run test:watch` | Run Vitest in watch mode |
+| `npm run deploy:db` | Push Supabase migrations |
+| `npm run deploy:functions` | Deploy Edge Functions |
+| `npm run deploy:secrets` | Set Edge Function secrets |
+| `npm run deploy:supabase` | Deploy database, secrets, and functions |
+
+## Environment Variables
+
+### Frontend (Vercel / local `.env`)
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| `VITE_SUPABASE_URL` | Yes | Supabase project URL |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Yes | Supabase anon / publishable key |
+
+### Supabase Edge Function secrets (never store in Vercel)
+
+| Variable | Description |
+| --- | --- |
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_ANON_KEY` | Supabase anon key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service-role key (privileged, server-side only) |
+| `AI_API_KEY` | AI provider API key |
+| `AI_BASE_URL` | AI provider base URL |
+| `AI_MODEL` | Primary model (e.g. gpt-4o-mini) |
+| `AI_FALLBACK_MODELS` | Comma-separated fallback models |
+| `AI_APP_URL` | App URL for context |
+| `AI_APP_NAME` | App name for context |
+
+## Deployment (Vercel)
+
+1. Push the repository to GitHub
+2. Import the project in Vercel
+3. Set framework preset to **Vite** (build: `npm run build`, output: `dist`)
+4. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`
+5. Deploy
+
+`vercel.json` includes an SPA rewrite, so client-side routes (`/pricing`, `/app/history`, `/app/account`, etc.) will not 404 on refresh.
+
+Backend is deployed separately to Supabase:
 
 ```bash
-npm run build
+npx supabase@latest link --project-ref your-project-ref
+npm run deploy:supabase
 ```
 
-8. Run tests:
+## Design
 
-```bash
-npm run test
-```
+- **Localization:** English + Arabic with RTL/LTR layout switching
+- **UI:** shadcn/ui components, dark-mode capable, responsive desktop/mobile
+- **Animations:** Framer Motion transitions
+- **Typography & palette:** Tailwind defaults, custom utility classes via `cn()`
+- **Exports:** Copy, TXT, PDF (jsPDF), and DOCX (docx) email export
 
-## Vercel Deployment
+## 👨‍💻 Author
 
-The frontend is ready to deploy as a Vite app on Vercel.
-
-Required Vercel project settings:
-
-- Framework preset: `Vite`
-- Build command: `npm run build`
-- Output directory: `dist`
-- Install command: `npm install`
-
-Required Vercel environment variables:
-
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_PUBLISHABLE_KEY`
-
-Do not add `SUPABASE_SERVICE_ROLE_KEY` to Vercel. Service-role and AI provider secrets belong only in Supabase Edge Function secrets.
-
-`vercel.json` includes a SPA rewrite so refreshed React Router routes such as `/pricing`, `/login`, and `/app` resolve to `index.html`.
-
-## Edge Function Configuration
-
-The AI functions use an OpenAI-compatible chat completions API:
-
-- `AI_API_KEY`: required provider API key
-- `AI_BASE_URL`: optional provider base URL, defaults to `https://api.openai.com/v1`
-- `AI_MODEL`: optional model name, defaults to `gpt-4o-mini`
-- `AI_FALLBACK_MODELS`: optional comma-separated fallback models for transient provider failures
-- `AI_STRICT_JSON`: optional boolean that asks compatible providers to enforce JSON output
-- `AI_APP_URL` and `AI_APP_NAME`: optional provider attribution headers
-
-This allows the server code to run against OpenAI or any compatible provider without changing application code.
-
-The `generate-email` function authenticates callers, validates and bounds inputs, uses an atomic per-user rate limit (6 requests per minute), applies the monthly plan quota, and stores structured generation results. The service-role key belongs only in Supabase Edge Function secrets, never in the frontend environment.
+**Kareem Hossny** — Full Stack Developer
+Open to freelance and junior full-stack opportunities.
