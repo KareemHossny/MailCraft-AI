@@ -8,11 +8,12 @@
 ![Supabase](https://img.shields.io/badge/Supabase-Auth%20%26%20PostgreSQL-3FCF8E?style=flat&logo=supabase&logoColor=white)
 ![Edge Functions](https://img.shields.io/badge/Edge_Functions-Deno-000000?style=flat&logo=deno&logoColor=white)
 ![OpenAI](https://img.shields.io/badge/OpenAI-Compatible%20API-412991?style=flat&logo=openai&logoColor=white)
+![Paymob](https://img.shields.io/badge/Paymob-Payments-00B5B8?style=flat&logo=paymob&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-Deployed-000000?style=flat&logo=vercel&logoColor=white)
 
-React Vite TypeScript Tailwind CSS Supabase Edge Functions Vercel
+React Vite TypeScript Tailwind CSS Supabase Edge Functions Paymob Vercel
 
-Production-ready SaaS for generating professional, fact-grounded business emails in English and Arabic. Built with React, Vite, TypeScript, Tailwind CSS, and shadcn/ui on the frontend, with Supabase Auth, PostgreSQL, and Edge Functions on the backend. AI generation runs server-side through an OpenAI-compatible provider with hallucination validation and deterministic fallbacks.
+Production-ready **SaaS** for generating professional, fact-grounded business emails in English and Arabic. Built with React, Vite, TypeScript, Tailwind CSS, and shadcn/ui on the frontend, with Supabase Auth, PostgreSQL, and Edge Functions on the backend. AI generation runs server-side through an OpenAI-compatible provider with hallucination validation and deterministic fallbacks, monetized through a subscription model with working **Paymob** payment integration (Free / Pro / Business plans).
 
 ## Project Structure
 
@@ -54,7 +55,7 @@ supabase/
 | `/signup` | Signup | Create an account |
 | `/forgot-password` | ForgotPassword | Password reset request |
 | `/reset-password` | ResetPassword | Set a new password |
-| `/pricing` | Pricing | Free / Pro / Business plan comparison |
+| `/pricing` | Pricing | Free / Pro / Business plans with working Paymob checkout |
 | `/app` | Generate | AI email generator (protected) |
 | `/app/history` | History | Saved drafts, search, favorites, revisions (protected) |
 | `/app/snippets` | Snippets | Reusable text snippets (protected) |
@@ -77,6 +78,7 @@ supabase/
 | Export | jsPDF, docx, html2canvas |
 | Backend | Supabase Auth, Supabase PostgreSQL, Supabase Edge Functions (Deno) |
 | AI | OpenAI-compatible chat completions API |
+| Payments | Paymob (EGP checkout, subscription plans) |
 | Linting / Testing | ESLint 9, Vitest + Testing Library |
 | Deployment | Vercel |
 
@@ -89,6 +91,13 @@ User Input → Sanitize → Merge verified profile facts → Generate email JSON
 ```
 
 The AI layer prioritizes trustworthiness over persuasive but unsupported claims, with post-generation validation rather than prompt-only instructions.
+
+## SaaS Subscription & Payments
+
+- **Plan catalog** — Free (15 emails/mo), Pro (500/mo), Business (3000/mo) with EGP pricing
+- **Paymob checkout** — Working payment integration; `plans.paymob_amount_cents` drives the amount
+- **Subscriptions** — Server-side written rows (`subscriptions.paymob_order_id`), one active plan per user
+- **Quotas & rate limiting** — Monthly usage counters per user + 6 generations/min rate limit, enforced server-side
 
 ## Local Development
 
