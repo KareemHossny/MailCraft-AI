@@ -110,61 +110,15 @@ cp .env.example .env
 
 # 3. Start dev server
 npm run dev
-
-# 4. Open in browser
-open http://localhost:8080
 ```
 
-## Available Scripts
+7. Build for production:
 
-| Command | Description |
-| --- | --- |
-| `npm run dev` | Start Vite dev server with HMR |
-| `npm run build` | Production build to `dist/` |
-| `npm run build:dev` | Build in development mode |
-| `npm run preview` | Preview production build locally |
-| `npm run lint` | Run ESLint across the project |
-| `npm run test` | Run Vitest once |
-| `npm run test:watch` | Run Vitest in watch mode |
-| `npm run deploy:db` | Push Supabase migrations |
-| `npm run deploy:functions` | Deploy Edge Functions |
-| `npm run deploy:secrets` | Set Edge Function secrets |
-| `npm run deploy:supabase` | Deploy database, secrets, and functions |
+```bash
+npm run build
+```
 
-## Environment Variables
-
-### Frontend (Vercel / local `.env`)
-
-| Variable | Required | Description |
-| --- | --- | --- |
-| `VITE_SUPABASE_URL` | Yes | Supabase project URL |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | Yes | Supabase anon / publishable key |
-
-### Supabase Edge Function secrets (never store in Vercel)
-
-| Variable | Description |
-| --- | --- |
-| `SUPABASE_URL` | Supabase project URL |
-| `SUPABASE_ANON_KEY` | Supabase anon key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Service-role key (privileged, server-side only) |
-| `AI_API_KEY` | AI provider API key |
-| `AI_BASE_URL` | AI provider base URL |
-| `AI_MODEL` | Primary model (e.g. gpt-4o-mini) |
-| `AI_FALLBACK_MODELS` | Comma-separated fallback models |
-| `AI_APP_URL` | App URL for context |
-| `AI_APP_NAME` | App name for context |
-
-## Deployment (Vercel)
-
-1. Push the repository to GitHub
-2. Import the project in Vercel
-3. Set framework preset to **Vite** (build: `npm run build`, output: `dist`)
-4. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`
-5. Deploy
-
-`vercel.json` includes an SPA rewrite, so client-side routes (`/pricing`, `/app/history`, `/app/account`, etc.) will not 404 on refresh.
-
-Backend is deployed separately to Supabase:
+8. Run tests:
 
 ```bash
 npx supabase@latest link --project-ref your-project-ref

@@ -9,4 +9,9 @@ for (const [key, value] of Object.entries(requiredEnv)) {
   }
 }
 
-export const env = requiredEnv;
+const siteUrl = (import.meta.env.VITE_SITE_URL || window.location.origin).replace(/\/$/, "");
+
+export const env = {
+  ...requiredEnv,
+  siteUrl,
+};

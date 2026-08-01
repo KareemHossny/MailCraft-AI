@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
+import { env } from "@/config/env";
 import { supabase } from "@/services/supabase/client";
 
 type AppRole = "admin" | "manager" | "agent";
@@ -102,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: window.location.origin },
+      options: { emailRedirectTo: `${env.siteUrl}/app` },
     });
     return { error: error ? new Error(error.message) : null };
   };
@@ -116,7 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: window.location.origin,
+        redirectTo: `${env.siteUrl}/app`,
       },
     });
   };
@@ -129,7 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const resetPassword = async (email: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${env.siteUrl}/reset-password`,
     });
     return { error: error ? new Error(error.message) : null };
   };
