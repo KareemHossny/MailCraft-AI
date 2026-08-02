@@ -646,6 +646,17 @@ function fallbackEmail(input: EmailGenerationRequest): EmailIntelligenceOutput {
   const context = input.context?.trim();
   const cta = input.cta?.trim() || (isArabic ? "أخبرني بالخطوة التالية المناسبة." : inferContextualCta(input));
   const signature = input.signature?.trim();
+  const client = input.clientContext ?? {};
+  const clientFacts = [
+    client.clientName ? `${isArabic ? "العميل" : "Client"}: ${client.clientName}` : "",
+    client.company ? `${isArabic ? "الشركة" : "Company"}: ${client.company}` : "",
+    client.project ? `${isArabic ? "المشروع" : "Project"}: ${client.project}` : "",
+    client.service ? `${isArabic ? "الخدمة" : "Service"}: ${client.service}` : "",
+    client.projectStatus ? `${isArabic ? "الحالة" : "Status"}: ${client.projectStatus}` : "",
+    client.amount ? `${isArabic ? "المبلغ" : "Amount"}: ${client.amount}` : "",
+    client.deadline ? `${isArabic ? "الموعد النهائي" : "Deadline"}: ${client.deadline}` : "",
+    client.importantFacts || "",
+  ].filter(Boolean).join("\n");
 
   const subject = isArabic
     ? `متابعة بخصوص ${purpose}`
@@ -659,6 +670,7 @@ function fallbackEmail(input: EmailGenerationRequest): EmailIntelligenceOutput {
         sender ? `بصفتي ${sender}، أود توضيح النقاط الأساسية بطريقة مباشرة ومنظمة.` : "",
         keyPoints ? `النقاط المهمة:\n${keyPoints}` : "",
         context ? `للسياق:\n${context}` : "",
+        clientFacts ? `التفاصيل المؤكدة:\n${clientFacts}` : "",
         cta,
         "",
         signature || "مع خالص التحية،",
@@ -670,6 +682,7 @@ function fallbackEmail(input: EmailGenerationRequest): EmailIntelligenceOutput {
         sender ? `As ${sender}, I want to keep this clear, specific, and easy to act on.` : "",
         keyPoints ? `Key points:\n${keyPoints}` : "",
         context ? `Context:\n${context}` : "",
+        clientFacts ? `Confirmed details:\n${clientFacts}` : "",
         cta,
         "",
         signature || "Best regards,",

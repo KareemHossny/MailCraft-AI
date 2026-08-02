@@ -26,6 +26,10 @@ type Item = {
   generation_version: number;
   revision_action: string | null;
   template: string | null;
+  workflow: string;
+  client_context: Record<string, string>;
+  message_status: string;
+  outcome: string | null;
 };
 
 export default function History() {
@@ -34,6 +38,8 @@ export default function History() {
   const [items, setItems] = useState<Item[]>([]);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "fav">("all");
+  const [workflow, setWorkflow] = useState("all");
+  const [status, setStatus] = useState("all");
   const [language, setLanguage] = useState("all");
   const [tone, setTone] = useState("all");
 
@@ -41,7 +47,7 @@ export default function History() {
     if (!user) return;
     const { data, error } = await supabase
       .from("email_history")
-      .select("id, title, subject, body, language, tone, mode, purpose, requested_length, generation_version, revision_action, template, is_favorite, created_at")
+      .select("id, title, subject, body, language, tone, mode, purpose, requested_length, generation_version, revision_action, template, workflow, client_context, message_status, outcome, is_favorite, created_at")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(100);
@@ -108,6 +114,12 @@ export default function History() {
     }
   };
 
+  const updateStatus = async (item: Item, nextStatus: string) => {
+    const { error } = await supabase.from("email_history").update({ message_status: nextStatus, last_used_at: new Date().toISOString() }).eq("id", item.id);
+    if (error) toast.error("Could not update message status.");
+    else { toast.success("Message status updated."); void load(); }
+  };
+
   const copy = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -123,6 +135,8 @@ export default function History() {
     return (filter !== "fav" || item.is_favorite)
       && (language === "all" || item.language === language)
       && (tone === "all" || item.tone === tone)
+      && (workflow === "all" || item.workflow === workflow)
+      && (status === "all" || item.message_status === status)
       && (!query || haystack.includes(query.toLowerCase()));
   });
 
@@ -139,6 +153,8 @@ export default function History() {
       </Tabs>
       <HistorySelect value={language} onChange={setLanguage} label="Language" options={[["all", "All languages"], ["en", "English"], ["ar", "Arabic"]]} />
       <HistorySelect value={tone} onChange={setTone} label="Tone" options={[["all", "All tones"], ...tones.map((value) => [value, value] as [string, string])]} />
+      <HistorySelect value={workflow} onChange={setWorkflow} label="Workflow" options={[["all", "All workflows"], ["client_proposal", "Proposals"], ["proposal_follow_up", "Follow-ups"], ["project_update", "Project updates"], ["payment_reminder", "Payment reminders"], ["revision_request", "Revisions"], ["client_complaint", "Complaints"]]} />
+      <HistorySelect value={status} onChange={setStatus} label="Status" options={[["all", "All statuses"], ["draft", "Draft"], ["sent", "Sent"], ["awaiting_reply", "Awaiting reply"], ["replied", "Replied"], ["won", "Won"], ["paid", "Paid"], ["closed", "Closed"]]} />
     </div>
 
     {filtered.length === 0 ? <div className="py-16 text-center text-muted-foreground"><p>{t("history.empty")}</p><p className="mt-1 text-sm">Generated emails will appear here and remain ready to reuse.</p></div> : <div className="space-y-4">
@@ -154,6 +170,7 @@ export default function History() {
                 {item.tone && <HistoryTag label={item.tone} />}
                 {item.requested_length && <HistoryTag label={item.requested_length} />}
                 {item.revision_action && <HistoryTag label={`${rewriteLabel(item.revision_action)} rewrite`} />}
+                <HistoryTag label={item.message_status.replace(/_/g, " ")} />
               </div>
               <p className="mt-2 line-clamp-3 whitespace-pre-wrap text-sm text-muted-foreground">{item.body}</p>
               <p className="mt-2 text-xs text-muted-foreground">{new Date(item.created_at).toLocaleString()} | {item.language.toUpperCase()}</p>
@@ -163,6 +180,7 @@ export default function History() {
               <IconButton label="Rename" onClick={() => void rename(item)}><Pencil className="h-4 w-4" /></IconButton>
               <IconButton label="Duplicate" onClick={() => void duplicate(item)}><CopyPlus className="h-4 w-4" /></IconButton>
               <IconButton label="Copy" onClick={() => void copy(`${item.subject ? `Subject: ${item.subject}\n\n` : ""}${item.body}`)}><Copy className="h-4 w-4" /></IconButton>
+              <HistorySelect value={item.message_status} onChange={(value) => void updateStatus(item, value)} label="Status" options={[["draft", "Draft"], ["sent", "Sent"], ["awaiting_reply", "Awaiting reply"], ["replied", "Replied"], ["won", "Won"], ["paid", "Paid"], ["closed", "Closed"]]} />
               <IconButton label="Delete" destructive onClick={() => void remove(item.id)}><Trash2 className="h-4 w-4" /></IconButton>
             </div>
           </div>

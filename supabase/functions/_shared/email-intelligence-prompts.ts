@@ -23,6 +23,16 @@ const templateGuidance: Record<string, string> = {
   general: "Prioritize specificity, clarity, and one actionable call to action.",
 };
 
+const workflowGuidance: Record<string, string> = {
+  client_proposal: "Win a freelance project by connecting supplied service and project facts to the client's need, then suggest one low-friction next step.",
+  proposal_follow_up: "Follow up on a proposal without pressure, reference supplied project facts, and ask for a clear update.",
+  project_update: "Give a concise project update with current status, next milestone, and any action needed from the client.",
+  payment_reminder: "Ask respectfully but clearly about outstanding payment; include amount and due information only when supplied.",
+  revision_request: "Handle a revision request constructively by acknowledging it and clarifying the next supported action.",
+  client_complaint: "Respond calmly to a complaint, acknowledge the stated issue, and propose only a supported next step.",
+  custom: "Write a useful professional client message around the supplied purpose.",
+};
+
 const refinementGuidance: Record<string, string> = {
   shorter: "Reduce the draft to its essential message while retaining every requested fact and the CTA.",
   longer: "Add only useful context already present in the supplied facts; do not invent supporting detail.",
@@ -112,6 +122,12 @@ function verifiedFacts(input: EmailGenerationRequest) {
       preferred_greeting: profile.preferredGreeting || "",
       default_cta: profile.defaultCta || "",
       default_sign_off: profile.defaultSignOff || "",
+      main_service: profile.mainService || "",
+      professional_bio: profile.professionalBio || "",
+      portfolio_url: profile.portfolioUrl || "",
+      default_currency: profile.defaultCurrency || "",
+      common_services: profile.commonServices || "",
+      default_payment_terms: profile.defaultPaymentTerms || "",
     },
     user_request: {
       sender_role: input.senderRole || "",
@@ -122,7 +138,19 @@ function verifiedFacts(input: EmailGenerationRequest) {
     key_points: input.keyPoints || "",
     extra_context: input.context || "",
     reply_email: input.mode === "reply" ? input.incomingEmail || "" : "",
+    client_context: input.clientContext || {},
   };
+}
+
+function inferSourceLanguage(input: EmailGenerationRequest) {
+  const source = [input.purpose, input.keyPoints, input.context, input.incomingEmail, input.clientContext?.importantFacts]
+    .filter(Boolean).join(" ");
+  const hasArabic = /[\u0600-\u06FF]/.test(source);
+  const hasLatin = /[A-Za-z]/.test(source);
+  if (hasArabic && hasLatin) return "mixed Arabic and English";
+  if (hasArabic) return "Arabic";
+  if (hasLatin) return "English";
+  return "unknown; infer from the available content";
 }
 
 export function buildEmailIntelligenceMessages(input: EmailGenerationRequest) {
@@ -130,9 +158,11 @@ export function buildEmailIntelligenceMessages(input: EmailGenerationRequest) {
   const tone = input.tone?.trim() || "formal";
   const template = normalizeTemplate(input.template) || inferTemplate(input);
   const cta = inferContextualCta(input);
+  const workflow = input.workflow || "custom";
+  const sourceLanguage = inferSourceLanguage(input);
   const englishVariant = input.englishVariant === "british" ? "British English" : "American English";
 
-  const system = `You are MailCraft AI, an expert email intelligence engine for business communication.
+  const system = `You are MailCraft AI, an expert Arabic-English client communication assistant for freelancers and agencies.
 
 You must perform this private pipeline before answering:
 1. Intent + Context Analysis: identify the sender goal, recipient situation, best hooks, and likely pain points.
@@ -175,6 +205,12 @@ Output requirements:
 
 Writing rules:
 - Write the email in ${langName}. ${input.language === "ar" ? "Use natural, professional Modern Standard Arabic." : ""}
+- The source content is ${sourceLanguage}; translate its meaning into ${langName} when the source and output languages differ. Do not produce a word-for-word translation.
+- Preserve names, company names, URLs, dates, amounts, currencies, project names, and explicit facts exactly unless the target language requires a standard date or currency format.
+- Never add a translation note, explanation, transliteration, or second-language version unless explicitly requested. Return only the requested target language.
+- When writing Arabic: use polished natural Modern Standard Arabic suitable for business email, correct grammar and agreement, natural sentence order, Arabic punctuation where appropriate, and a professional greeting and closing. Do not use literal English calques, dialect unless requested, or awkward machine-translated phrasing.
+- When writing English from Arabic: understand the Arabic context and intent first, then write idiomatic professional English rather than translating sentence structure literally.
+- When writing Arabic from English: preserve the original intent, level of politeness, commercial meaning, and call to action in fluent professional Arabic.
 - If writing in English, use ${englishVariant}.
 - Use the requested tone: ${toneSystem[tone] ?? tone}.
 - Avoid buzzwords, filler, hype, repetitive phrases, generic compliments, and vague claims.
@@ -201,6 +237,10 @@ Writing rules:
 
   const user = {
     task: input.refine ? "refine_existing_email" : "generate_email",
+    workflow,
+    workflow_guidance: workflowGuidance[workflow] ?? workflowGuidance.custom,
+    source_language: sourceLanguage,
+    translation_requirement: input.language === "ar" ? "Arabic output must be native-quality Modern Standard Arabic." : "English output must be idiomatic professional English, including when source facts are Arabic.",
     template,
     template_guidance: templateGuidance[template],
     mode: input.mode,
@@ -218,6 +258,7 @@ Writing rules:
     required_cta: cta,
     signature: input.signature || "",
     profile: input.profile || {},
+    client_context: input.clientContext || {},
     refinement: input.refine || "",
     refinement_guidance: input.refine ? refinementGuidance[input.refine] ?? "Apply the requested rewrite while preserving every supplied fact." : "",
     previous_subject: input.previousSubject || "",

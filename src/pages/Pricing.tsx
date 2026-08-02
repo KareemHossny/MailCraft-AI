@@ -20,6 +20,7 @@ export default function Pricing() {
   const { user } = useAuth();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [currentSlug, setCurrentSlug] = useState<string | null>(null);
+  const [checkoutSlug, setCheckoutSlug] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.from("plans").select("*").eq("is_active", true).order("sort_order")
@@ -31,6 +32,21 @@ export default function Pricing() {
       setCurrentSlug("free");
     }
   }, [user]);
+
+  const startCheckout = async (planSlug: string) => {
+    if (!user) {
+      window.location.assign("/login?redirect=/pricing");
+      return;
+    }
+    setCheckoutSlug(planSlug);
+    const { data, error } = await supabase.functions.invoke("create-payment", { body: { planSlug } });
+    setCheckoutSlug(null);
+    if (error || !data?.checkoutUrl) {
+      toast.error(t("pricing.paymentError"));
+      return;
+    }
+    window.location.assign(data.checkoutUrl);
+  };
 
   const Body = (
     <>
@@ -71,7 +87,9 @@ export default function Pricing() {
                   ) : p.slug === "free" ? (
                     <Link to={user ? "/app" : "/signup"}><Button variant="outline" className="w-full">{t("pricing.getStarted")}</Button></Link>
                   ) : (
-                    <Button className="w-full" onClick={() => toast.info(t("pricing.comingSoon"))}>{t("pricing.choose")}</Button>
+                    <Button className="w-full" disabled={checkoutSlug === p.slug} onClick={() => void startCheckout(p.slug)}>
+                      {checkoutSlug === p.slug ? t("pricing.processing") : t("pricing.choose")}
+                    </Button>
                   )}
                 </div>
               </CardContent>

@@ -1,5 +1,13 @@
 export type EmailMode = "compose" | "reply";
 export type EmailLanguage = "en" | "ar";
+export type CommunicationWorkflow =
+  | "client_proposal"
+  | "proposal_follow_up"
+  | "project_update"
+  | "payment_reminder"
+  | "revision_request"
+  | "client_complaint"
+  | "custom";
 export type EmailRefinement =
   | "shorter"
   | "longer"
@@ -44,6 +52,25 @@ export type UserProfileContext = {
   preferredGreeting?: string;
   defaultCta?: string;
   defaultSignOff?: string;
+  mainService?: string;
+  professionalBio?: string;
+  portfolioUrl?: string;
+  defaultCurrency?: string;
+  commonServices?: string;
+  defaultPaymentTerms?: string;
+};
+
+export type ClientContext = {
+  clientName?: string;
+  company?: string;
+  project?: string;
+  service?: string;
+  projectStatus?: string;
+  paymentStatus?: string;
+  deadline?: string;
+  amount?: string;
+  importantFacts?: string;
+  nextAction?: string;
 };
 
 export type EmailGenerationRequest = {
@@ -68,6 +95,8 @@ export type EmailGenerationRequest = {
   previousSubject?: string;
   previousBody?: string;
   previousHistoryId?: string;
+  workflow?: CommunicationWorkflow;
+  clientContext?: ClientContext;
 };
 
 export type EmailIntelligenceOutput = {

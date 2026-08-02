@@ -34,7 +34,7 @@ export default function Landing() {
     {
       name: t("pricing.free"),
       price: t("pricing.free"),
-      quota: `15 ${t("pricing.emailsMonth")}`,
+      quota: `10 ${t("pricing.emailsMonth")}`,
       features: ["landing.pricing.free.feature1", "landing.pricing.free.feature2", "landing.pricing.free.feature3"],
       cta: t("pricing.getStarted"),
       href: appHref,
@@ -43,7 +43,7 @@ export default function Landing() {
     {
       name: "Pro",
       price: "199 EGP",
-      quota: `250 ${t("pricing.emailsMonth")}`,
+      quota: "Saved client context + higher usage",
       features: ["landing.pricing.pro.feature1", "landing.pricing.pro.feature2", "landing.pricing.pro.feature3"],
       cta: t("pricing.choose"),
       href: "/pricing",
@@ -52,7 +52,7 @@ export default function Landing() {
     {
       name: "Business",
       price: "499 EGP",
-      quota: `1,000 ${t("pricing.emailsMonth")}`,
+      quota: "Agency workflows + team features",
       features: ["landing.pricing.business.feature1", "landing.pricing.business.feature2", "landing.pricing.business.feature3"],
       cta: t("pricing.choose"),
       href: "/pricing",
@@ -138,6 +138,24 @@ export default function Landing() {
               className="relative w-full rounded-3xl border border-border/60 shadow-lg"
             />
           </motion.div>
+        </div>
+      </section>
+
+      {/* Public conversion demo */}
+      <section className="border-t border-border/60 bg-secondary/20">
+        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-16 lg:grid-cols-[0.8fr_1.2fr] lg:items-center lg:px-8">
+          <div>
+            <span className="text-sm font-semibold uppercase tracking-wide text-primary">{t("landing.demo.badge")}</span>
+            <h2 className="mt-2 font-display text-3xl font-bold sm:text-4xl">{t("landing.demo.title")}</h2>
+            <p className="mt-4 text-muted-foreground">{t("landing.demo.subtitle")}</p>
+            <Link to={appHref} className="mt-6 inline-block"><Button className="gradient-primary text-primary-foreground">{t("landing.demo.button")}</Button></Link>
+          </div>
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+            <div className="mb-4 flex flex-wrap gap-2 text-xs"><span className="rounded-full bg-primary/10 px-3 py-1 font-medium text-primary">{t("landing.demo.workflow")}</span><span className="rounded-full bg-secondary px-3 py-1 text-muted-foreground">{t("landing.demo.language")}</span><span className="rounded-full bg-secondary px-3 py-1 text-muted-foreground">{t("landing.demo.grounded")}</span></div>
+            <p className="text-sm font-semibold">{t("landing.demo.subject")}</p>
+            <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">{t("landing.demo.body")}</p>
+            <div className="mt-5 flex flex-wrap gap-2 border-t border-border pt-4"><Button variant="outline" size="sm" onClick={() => window.location.assign(appHref)}>{t("landing.demo.copy")}</Button><span className="self-center text-xs text-muted-foreground">{t("landing.demo.note")}</span></div>
+          </div>
         </div>
       </section>
 

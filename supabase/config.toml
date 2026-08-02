@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.ai-content]
 verify_jwt = false
+
+[functions.create-payment]
+verify_jwt = false
+
+[functions.paymob-webhook]
+verify_jwt = false

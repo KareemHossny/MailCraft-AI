@@ -19,10 +19,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/services/supabase/client";
 import { toast } from "sonner";
+import type { TranslationKey } from "@/i18n/translations";
 
 type Mode = "compose" | "reply";
+type CommunicationWorkflow = "client_proposal" | "proposal_follow_up" | "project_update" | "payment_reminder" | "revision_request" | "client_complaint" | "custom";
 type Refinement = "shorter" | "longer" | "formal" | "casual" | "executive" | "persuasive" | "concise" | "recruiter" | "investor" | "sales" | "british" | "american" | "friendlier" | "warmer" | "confident" | "simpler_english" | "more_natural" | "follow_up" | "direct" | "polite" | "ats_friendly" | "ceo" | "sales_pitch" | "customer_support" | "networking";
 type Snippet = { id: string; title: string; body: string };
+type ClientContext = { clientName: string; company: string; project: string; service: string; projectStatus: string; paymentStatus: string; deadline: string; amount: string; importantFacts: string; nextAction: string };
 type IntelligenceResult = {
   analysis: { intent: string; tone: string; hooks: string[]; pain_points: string[] };
   strategy?: { summary?: string; personalization_used?: string[]; why_it_should_work?: string[]; next_best_action?: string; tone?: string; goal?: string; audience?: string; primary_cta?: string; writing_style?: string; facts_used?: number; estimated_reading_time_seconds?: number };
@@ -55,9 +58,25 @@ const templates = [
   { id: "partnership", category: "Sales", title: "Partnership", purpose: "Propose a mutually useful partnership.", tone: "persuasive", cta: "Could we explore this in a brief call?" },
   { id: "job-application", category: "Career", title: "Job application", purpose: "Introduce yourself for a role and explain your relevant fit.", tone: "formal", cta: "I would welcome the chance to discuss my application." },
   { id: "recruiter-reply", category: "Career", title: "Recruiter reply", purpose: "Reply to a recruiter with clear interest and availability.", tone: "recruiter", cta: "Please let me know a suitable time to speak." },
+  { id: "application-follow-up", category: "Career", title: "Application follow-up", purpose: "Follow up on a job application with a concise, respectful update request.", tone: "formal", cta: "I would appreciate any update you can share on the application process." },
+  { id: "interview-thank-you", category: "Career", title: "Interview thank-you", purpose: "Thank an interviewer and reinforce your interest using only details from the conversation.", tone: "friendly", cta: "I would be glad to provide any further information." },
+  { id: "freelance-proposal", category: "Freelance", title: "Freelance proposal", purpose: "Respond to a project brief with a clear fit, approach, and next step.", tone: "persuasive", cta: "Would you be open to a brief call to discuss the project?" },
+  { id: "client-follow-up", category: "Freelance", title: "Client follow-up", purpose: "Follow up with a prospective client after an initial conversation or proposal.", tone: "friendly", cta: "I would be happy to answer any questions or discuss the next step." },
+  { id: "scope-clarification", category: "Freelance", title: "Scope clarification", purpose: "Ask focused questions about project scope, deliverables, timeline, or requirements.", tone: "professional", cta: "Could you confirm these details so I can prepare an accurate proposal?" },
+  { id: "payment-reminder", category: "Freelance", title: "Payment reminder", purpose: "Send a firm but respectful reminder about an outstanding freelance payment.", tone: "firm", cta: "Could you please confirm when the payment is expected?" },
   { id: "support-response", category: "Support", title: "Support response", purpose: "Resolve a customer issue clearly and respectfully.", tone: "friendly", cta: "Please reply if there is anything else we can help with." },
   { id: "executive-update", category: "Executive", title: "Executive update", purpose: "Share a concise decision-ready business update.", tone: "executive", cta: "Please confirm the preferred next step." },
   { id: "investor-intro", category: "Executive", title: "Investor introduction", purpose: "Make a focused introduction to a potential investor.", tone: "investor", cta: "Would you be open to a short introductory conversation?" },
+];
+
+const workflows: Array<{ id: CommunicationWorkflow; labelKey: TranslationKey; purpose: string; tone: string; cta: string }> = [
+  { id: "client_proposal", labelKey: "gen.workflow.client_proposal", purpose: "Present my service and approach for this client's project.", tone: "persuasive", cta: "Would you be open to a brief call to discuss the project?" },
+  { id: "proposal_follow_up", labelKey: "gen.workflow.proposal_follow_up", purpose: "Follow up on the proposal I sent and ask about the next step.", tone: "friendly", cta: "Would you be open to sharing an update?" },
+  { id: "project_update", labelKey: "gen.workflow.project_update", purpose: "Share a clear update on the current project status.", tone: "formal", cta: "Please let me know if you have any questions about the next step." },
+  { id: "payment_reminder", labelKey: "gen.workflow.payment_reminder", purpose: "Send a respectful reminder about an outstanding project payment.", tone: "firm", cta: "Could you please confirm when the payment is expected?" },
+  { id: "revision_request", labelKey: "gen.workflow.revision_request", purpose: "Respond constructively to the client's requested revisions.", tone: "friendly", cta: "Could you confirm the priority changes so I can proceed?" },
+  { id: "client_complaint", labelKey: "gen.workflow.client_complaint", purpose: "Respond calmly to the client's concern and propose the next step.", tone: "apologetic", cta: "Could we agree on the next step to resolve this?" },
+  { id: "custom", labelKey: "gen.workflow.custom", purpose: "Write a professional client message.", tone: "formal", cta: "What would be the best next step?" },
 ];
 
 export default function Generate() {
@@ -65,9 +84,11 @@ export default function Generate() {
   const { user } = useAuth();
   const [mode, setMode] = useState<Mode>("compose");
   const [form, setForm] = useState({
-    senderRole: "", recipientRole: "", purpose: "", keyPoints: "", incomingEmail: "",
-    tone: "formal", length: "medium", urgency: "normal", cta: "", context: "", avoid: "",
+    senderRole: "", recipientRole: "", purpose: "Present my service and approach for this client's project.", keyPoints: "", incomingEmail: "",
+    tone: "persuasive", length: "medium", urgency: "normal", cta: "Would you be open to a brief call to discuss the project?", context: "", avoid: "",
   });
+  const [workflow, setWorkflow] = useState<CommunicationWorkflow>("client_proposal");
+  const [clientContext, setClientContext] = useState<ClientContext>({ clientName: "", company: "", project: "", service: "", projectStatus: "", paymentStatus: "", deadline: "", amount: "", importantFacts: "", nextAction: "" });
   const [language, setLanguage] = useState<"en" | "ar">(locale);
   const [englishVariant, setEnglishVariant] = useState<"american" | "british">("american");
   const [signature, setSignature] = useState("");
@@ -79,9 +100,11 @@ export default function Generate() {
   const [activeRefinement, setActiveRefinement] = useState<Refinement | null>(null);
   const [usage, setUsage] = useState<{ used: number; quota: number } | null>(null);
   const [quotaHit, setQuotaHit] = useState(false);
+  const [onboardingDismissed, setOnboardingDismissed] = useState(false);
   const generatingRef = useRef(false);
 
   const set = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
+  const setClient = (key: keyof ClientContext, value: string) => setClientContext((current) => ({ ...current, [key]: value }));
 
   const loadUsage = useCallback(async () => {
     if (!user) return;
@@ -90,7 +113,7 @@ export default function Generate() {
       supabase.from("usage_counters").select("emails_used").eq("user_id", user.id).eq("period_start", period).maybeSingle(),
       supabase.from("subscriptions").select("status, plans(monthly_quota)").eq("user_id", user.id).maybeSingle(),
     ]);
-    let quota = 15;
+    let quota = 10;
     if (subscription?.status === "active" && subscription.plans?.monthly_quota) quota = subscription.plans.monthly_quota;
     else {
       const { data: freePlan } = await supabase.from("plans").select("monthly_quota").eq("slug", "free").maybeSingle();
@@ -101,9 +124,10 @@ export default function Generate() {
 
   useEffect(() => {
     if (!user) return;
+    setOnboardingDismissed(window.localStorage.getItem(`mailcraft:onboarding-dismissed:${user.id}`) === "true");
     const loadWorkspace = async () => {
       const [{ data: profile }, { data: savedSnippets }] = await Promise.all([
-        supabase.from("profiles").select("full_name, default_role, default_signature, locale, job_title, preferred_signature, default_tone, default_language, default_cta, default_sign_off").eq("user_id", user.id).maybeSingle(),
+        supabase.from("profiles").select("full_name, default_role, default_signature, locale, job_title, preferred_signature, default_tone, default_language, default_cta, default_sign_off, main_service").eq("user_id", user.id).maybeSingle(),
         supabase.from("snippets").select("id, title, body").eq("user_id", user.id).order("created_at", { ascending: false }),
       ]);
       if (profile) {
@@ -111,6 +135,7 @@ export default function Generate() {
         if (profile.preferred_signature || profile.default_signature || profile.default_sign_off) setSignature(profile.preferred_signature || profile.default_signature || profile.default_sign_off || "");
         if (profile.default_tone) setForm((current) => ({ ...current, tone: profile.default_tone }));
         if (profile.default_cta) setForm((current) => ({ ...current, cta: current.cta || profile.default_cta }));
+        if (profile.main_service) setClientContext((current) => ({ ...current, service: profile.main_service || "" }));
         if (profile.full_name) setExportAuthor(profile.full_name);
         if (profile.default_language === "ar" || profile.default_language === "en") setLanguage(profile.default_language);
         else if (profile.locale === "ar" || profile.locale === "en") setLanguage(profile.locale);
@@ -137,6 +162,20 @@ export default function Generate() {
     if (!template) return;
     setForm((current) => ({ ...current, purpose: template.purpose, tone: template.tone, cta: template.cta }));
   };
+
+  const applyWorkflow = (value: CommunicationWorkflow) => {
+    setWorkflow(value);
+    const selected = workflows.find((item) => item.id === value) ?? workflows[workflows.length - 1];
+    setForm((current) => ({ ...current, purpose: selected.purpose, tone: selected.tone, cta: selected.cta }));
+    setSelectedTemplate("custom");
+  };
+
+  const dismissOnboarding = () => {
+    if (user) window.localStorage.setItem(`mailcraft:onboarding-dismissed:${user.id}`, "true");
+    setOnboardingDismissed(true);
+  };
+
+  const showOnboarding = Boolean(user && !onboardingDismissed && !form.senderRole.trim() && !form.purpose.trim() && selectedTemplate === "custom");
 
   const insertSnippet = (id: string) => {
     const snippet = snippets.find((item) => item.id === id);
@@ -180,7 +219,7 @@ export default function Generate() {
       const response = await supabase.functions.invoke("generate-email", {
         body: {
           mode, language, englishVariant, signature, template: selectedTemplate === "custom" ? undefined : selectedTemplate,
-          ...form, ...(refine ? { refine, previousSubject: result?.subject, previousBody: result?.body, previousHistoryId: result?.historyId } : {}),
+          workflow, clientContext, ...form, ...(refine ? { refine, previousSubject: result?.subject, previousBody: result?.body, previousHistoryId: result?.historyId } : {}),
         },
       });
       const { error } = response;
@@ -218,6 +257,7 @@ export default function Generate() {
   const exportPdf = () => {
     if (!result) return;
     const pdf = new jsPDF({ unit: "pt", format: "a4" });
+    pdf.setCharSpace(0);
     const margin = 54;
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
@@ -232,13 +272,15 @@ export default function Generate() {
     pdf.line(margin, margin + 10, pageWidth - margin, margin + 10);
     pdf.setTextColor(30, 30, 30);
     pdf.setFontSize(17);
-    pdf.text(pdf.splitTextToSize(result.subject, contentWidth), margin, margin + 38);
+    const subjectLines = wrapPdfText(pdf, result.subject, contentWidth);
+    subjectLines.forEach((line, index) => pdf.text(line, margin, margin + 38 + index * 22));
     let y = margin + 66;
+    if (subjectLines.length > 1) y += (subjectLines.length - 1) * 22;
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(11);
     const writeLine = (line: string) => {
       const urlOnly = line.trim().match(/^https?:\/\/\S+$/)?.[0];
-      const lines = pdf.splitTextToSize(line || " ", contentWidth) as string[];
+      const lines = wrapPdfText(pdf, line || " ", contentWidth);
       for (const wrapped of lines) {
         if (y > pageHeight - margin) { pdf.addPage(); y = margin; }
         if (urlOnly && wrapped === urlOnly) {
@@ -280,21 +322,19 @@ export default function Generate() {
       </div>
       {quotaHit && <Card className="mb-6 border-warning/40 bg-warning/5"><CardContent className="flex flex-wrap items-center justify-between gap-3 py-4"><div><p className="font-semibold">{t("gen.quota.title")}</p><p className="text-sm text-muted-foreground">{t("gen.quota.desc")}</p></div><Link to="/pricing"><Button>{t("gen.quota.upgrade")}</Button></Link></CardContent></Card>}
 
+      {showOnboarding && <Card className="mb-6 border-primary/25 bg-primary/5"><CardContent className="p-5"><div className="flex flex-wrap items-start justify-between gap-4"><div><p className="font-display text-lg font-bold">Start with a real workflow</p><p className="mt-1 max-w-2xl text-sm text-muted-foreground">Choose what you need to write and MailCraft will prepare the right structure, tone, and call to action.</p></div><Button variant="ghost" size="sm" onClick={dismissOnboarding}>Dismiss</Button></div><div className="mt-4 grid gap-3 sm:grid-cols-3"><Button variant="outline" className="h-auto justify-start whitespace-normal p-3 text-left" onClick={() => applyTemplate("job-application")}><span><span className="block font-semibold">Apply for a job</span><span className="mt-1 block text-xs font-normal text-muted-foreground">Application or recruiter reply</span></span></Button><Button variant="outline" className="h-auto justify-start whitespace-normal p-3 text-left" onClick={() => applyTemplate("freelance-proposal")}><span><span className="block font-semibold">Win freelance work</span><span className="mt-1 block text-xs font-normal text-muted-foreground">Proposal or project response</span></span></Button><Button variant="outline" className="h-auto justify-start whitespace-normal p-3 text-left" onClick={() => applyTemplate("client-follow-up")}><span><span className="block font-semibold">Follow up with a client</span><span className="mt-1 block text-xs font-normal text-muted-foreground">Keep the conversation moving</span></span></Button></div></CardContent></Card>}
+
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader className="pb-3"><Tabs value={mode} onValueChange={(value) => setMode(value as Mode)}><TabsList className="grid w-full grid-cols-2"><TabsTrigger value="compose">{t("gen.mode.compose")}</TabsTrigger><TabsTrigger value="reply">{t("gen.mode.reply")}</TabsTrigger></TabsList></Tabs></CardHeader>
           <CardContent className="space-y-4">
-            <Field label="Template"><SelectBox value={selectedTemplate} onChange={applyTemplate} options={[["custom", "Custom email"], ...templates.map((item) => [item.id, `${item.category}: ${item.title}`] as [string, string])]} /></Field>
+            <Field label={t("gen.workflow")} required><SelectBox value={workflow} onChange={(value) => applyWorkflow(value as CommunicationWorkflow)} options={workflows.map((item) => [item.id, t(item.labelKey)] as [string, string])} /></Field>
+            <p className="-mt-2 text-xs text-muted-foreground">{t("gen.workflowHint")}</p>
             {mode === "reply" && <Field label={t("gen.field.incoming")}><Textarea rows={4} value={form.incomingEmail} placeholder={t("gen.field.incoming.ph")} onChange={(event) => set("incomingEmail", event.target.value)} /></Field>}
-            <div className="grid gap-4 sm:grid-cols-2"><Field label={t("gen.field.senderRole")}><Input value={form.senderRole} placeholder={t("gen.field.senderRole.ph")} onChange={(event) => set("senderRole", event.target.value)} /></Field><Field label={t("gen.field.recipientRole")}><Input value={form.recipientRole} placeholder={t("gen.field.recipientRole.ph")} onChange={(event) => set("recipientRole", event.target.value)} /></Field></div>
-            <Field label={t("gen.field.purpose")} required={mode === "compose"}><Textarea rows={2} value={form.purpose} placeholder={t("gen.field.purpose.ph")} onChange={(event) => set("purpose", event.target.value)} /></Field>
-            <Field label={t("gen.field.keyPoints")} optional><Textarea rows={4} value={form.keyPoints} placeholder={t("gen.field.keyPoints.ph")} onChange={(event) => set("keyPoints", event.target.value)} /></Field>
-            {snippets.length > 0 && <Field label="Add snippet" optional><SelectBox value="" onChange={insertSnippet} options={[["", "Select a saved snippet"], ...snippets.map((snippet) => [snippet.id, snippet.title] as [string, string])]} /></Field>}
+            {workflow === "custom" && <Field label={t("gen.customPurpose")} required><Textarea rows={2} value={form.purpose} placeholder={t("gen.customPurpose.ph")} onChange={(event) => set("purpose", event.target.value)} /></Field>}
+            <div className="rounded-xl border border-border bg-muted/20 p-4"><p className="mb-1 font-semibold">{t("gen.clientFacts")}</p><p className="mb-3 text-xs text-muted-foreground">{t("gen.clientFactsHint")}</p><div className="grid gap-4 sm:grid-cols-2"><Field label={t("gen.clientName")} optional><Input value={clientContext.clientName} onChange={(event) => setClient("clientName", event.target.value)} placeholder="e.g. Ahmed" /></Field><Field label={t("gen.company")} optional><Input value={clientContext.company} onChange={(event) => setClient("company", event.target.value)} placeholder="e.g. Acme Studio" /></Field><Field label={t("gen.project")} optional><Input value={clientContext.project} onChange={(event) => setClient("project", event.target.value)} placeholder="e.g. Website redesign" /></Field><Field label={t("gen.service")} optional><Input value={clientContext.service} onChange={(event) => setClient("service", event.target.value)} placeholder="e.g. Brand identity" /></Field><Field label={t("gen.status")} optional><Input value={clientContext.projectStatus} onChange={(event) => setClient("projectStatus", event.target.value)} placeholder="e.g. Milestone approved" /></Field><Field label={t("gen.amount")} optional><Input value={clientContext.amount} onChange={(event) => setClient("amount", event.target.value)} placeholder="e.g. 5,000 EGP due" /></Field><Field label={t("gen.deadline")} optional><Input value={clientContext.deadline} onChange={(event) => setClient("deadline", event.target.value)} placeholder="e.g. 15 August" /></Field></div><div className="mt-4"><Field label={t("gen.otherFacts")} optional><Textarea rows={2} value={clientContext.importantFacts} onChange={(event) => setClient("importantFacts", event.target.value)} placeholder={t("gen.otherFacts.ph")} /></Field></div></div>
             <div className="grid gap-4 sm:grid-cols-2"><Field label={t("gen.field.tone")}><SelectBox value={form.tone} onChange={(value) => set("tone", value)} options={toneOptions(t)} /></Field><Field label={t("gen.field.length")}><SelectBox value={form.length} onChange={(value) => set("length", value)} options={[["short", t("gen.length.short")], ["medium", t("gen.length.medium")], ["long", t("gen.length.long")]]} /></Field></div>
-            <div className="grid gap-4 sm:grid-cols-2"><Field label={t("gen.field.language")}><SelectBox value={language} onChange={(value) => setLanguage(value as "en" | "ar")} options={[["en", "English"], ["ar", "العربية"]]} /></Field>{language === "en" && <Field label="English variant"><SelectBox value={englishVariant} onChange={(value) => setEnglishVariant(value as "american" | "british")} options={[["american", "American English"], ["british", "British English"]]} /></Field>}</div>
-            <div className="grid gap-4 sm:grid-cols-2"><Field label={t("gen.field.urgency")}><SelectBox value={form.urgency} onChange={(value) => set("urgency", value)} options={[["low", t("gen.urgency.low")], ["normal", t("gen.urgency.normal")], ["high", t("gen.urgency.high")]]} /></Field><Field label={t("gen.field.cta")} optional><Input value={form.cta} placeholder={t("gen.field.cta.ph")} onChange={(event) => set("cta", event.target.value)} /></Field></div>
-            <Field label={t("gen.field.context")} optional><Textarea rows={2} value={form.context} placeholder={t("gen.field.context.ph")} onChange={(event) => set("context", event.target.value)} /></Field>
-            <Field label={t("gen.field.avoid")} optional><Input value={form.avoid} placeholder={t("gen.field.avoid.ph")} onChange={(event) => set("avoid", event.target.value)} /></Field>
+            <div className="grid gap-4 sm:grid-cols-2"><Field label={t("gen.field.language")}><SelectBox value={language} onChange={(value) => setLanguage(value as "en" | "ar")} options={[["en", "English"], ["ar", "العربية"]]} /></Field><Field label={t("gen.nextAction")} optional><Input value={form.cta} placeholder={t("gen.nextAction.ph")} onChange={(event) => set("cta", event.target.value)} /></Field></div>
             <Button className="w-full gap-2 gradient-primary text-primary-foreground border-0" disabled={loading} onClick={() => void generate()}>{loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}{loading ? t("gen.generating") : t("gen.generate")}</Button>
           </CardContent>
         </Card>
@@ -367,6 +407,56 @@ function emailParagraph(line: string) {
       : new TextRun({ text: part })),
     spacing: { after: 120 },
   });
+}
+
+function cleanPdfText(value: string) {
+  return value
+    .normalize("NFKC")
+    .replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, "")
+    .replace(/\u00A0/g, " ")
+    .replace(/[‐‑‒–—―]/g, "-")
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/[ \t]+/g, " ")
+    .trimEnd();
+}
+
+function wrapPdfText(pdf: jsPDF, value: string, maxWidth: number) {
+  const text = cleanPdfText(value);
+  if (!text.trim()) return [" "];
+
+  const words = text.split(" ");
+  const lines: string[] = [];
+  let current = "";
+
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (pdf.getTextWidth(candidate) <= maxWidth) {
+      current = candidate;
+      continue;
+    }
+
+    if (current) lines.push(current);
+
+    if (pdf.getTextWidth(word) <= maxWidth) {
+      current = word;
+      continue;
+    }
+
+    let chunk = "";
+    for (const char of word) {
+      const next = `${chunk}${char}`;
+      if (pdf.getTextWidth(next) <= maxWidth) chunk = next;
+      else {
+        if (chunk) lines.push(chunk);
+        chunk = char;
+      }
+    }
+    current = chunk;
+  }
+
+  if (current) lines.push(current);
+  return lines;
 }
 
 function exportFileName(subject: string, extension: "pdf" | "docx") {

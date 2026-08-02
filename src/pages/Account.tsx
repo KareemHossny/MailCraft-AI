@@ -30,6 +30,12 @@ type ProfileForm = {
   preferredGreeting: string;
   defaultCta: string;
   defaultSignOff: string;
+  mainService: string;
+  professionalBio: string;
+  portfolioUrl: string;
+  defaultCurrency: string;
+  commonServices: string;
+  defaultPaymentTerms: string;
 };
 
 const accountDraftPrefix = "mailcraft:account-profile-draft:";
@@ -51,6 +57,12 @@ const emptyProfile: ProfileForm = {
   preferredGreeting: "",
   defaultCta: "",
   defaultSignOff: "",
+  mainService: "",
+  professionalBio: "",
+  portfolioUrl: "",
+  defaultCurrency: "EGP",
+  commonServices: "",
+  defaultPaymentTerms: "",
 };
 
 function draftKey(userId: string) {
@@ -110,7 +122,7 @@ export default function Account() {
 
     supabase
       .from("profiles")
-      .select("full_name, default_role, default_signature, locale, job_title, company, company_website, industry, country, preferred_signature, default_tone, default_language, linkedin_url, phone_number, preferred_pronouns, timezone, preferred_greeting, default_cta, default_sign_off")
+      .select("full_name, default_role, default_signature, locale, job_title, company, company_website, industry, country, preferred_signature, default_tone, default_language, linkedin_url, phone_number, preferred_pronouns, timezone, preferred_greeting, default_cta, default_sign_off, main_service, professional_bio, portfolio_url, default_currency, common_services, default_payment_terms")
       .eq("user_id", user.id)
       .maybeSingle()
       .then(({ data }) => {
@@ -132,6 +144,12 @@ export default function Account() {
           preferredGreeting: data?.preferred_greeting ?? "",
           defaultCta: data?.default_cta ?? "",
           defaultSignOff: data?.default_sign_off ?? "",
+          mainService: data?.main_service ?? "",
+          professionalBio: data?.professional_bio ?? "",
+          portfolioUrl: data?.portfolio_url ?? "",
+          defaultCurrency: data?.default_currency ?? "EGP",
+          commonServices: data?.common_services ?? "",
+          defaultPaymentTerms: data?.default_payment_terms ?? "",
         }, defaultLanguage);
         const draftProfile = readProfileDraft(user.id, defaultLanguage);
         const nextProfile = draftProfile ?? savedProfile;
@@ -187,6 +205,12 @@ export default function Account() {
         preferred_greeting: profile.preferredGreeting || null,
         default_cta: profile.defaultCta || null,
         default_sign_off: profile.defaultSignOff || null,
+        main_service: profile.mainService || null,
+        professional_bio: profile.professionalBio || null,
+        portfolio_url: profile.portfolioUrl || null,
+        default_currency: profile.defaultCurrency || null,
+        common_services: profile.commonServices || null,
+        default_payment_terms: profile.defaultPaymentTerms || null,
       })
       .eq("user_id", user.id);
 
@@ -232,6 +256,12 @@ export default function Account() {
             <Field label="Company website">
               <Input value={profile.companyWebsite} onChange={(e) => setField("companyWebsite", e.target.value)} placeholder="https://example.com" inputMode="url" />
             </Field>
+            <Field label="Main service">
+              <Input value={profile.mainService} onChange={(e) => setField("mainService", e.target.value)} placeholder="Web design, copywriting, consulting" />
+            </Field>
+            <Field label="Portfolio URL" optional>
+              <Input type="url" value={profile.portfolioUrl} onChange={(e) => setField("portfolioUrl", e.target.value)} placeholder="https://your-portfolio.com" inputMode="url" />
+            </Field>
             <Field label="Industry">
               <Input value={profile.industry} onChange={(e) => setField("industry", e.target.value)} placeholder="SaaS, Real Estate, Recruiting" />
             </Field>
@@ -275,6 +305,20 @@ export default function Account() {
             <Field label="Default sign-off" optional>
               <Input value={profile.defaultSignOff} onChange={(e) => setField("defaultSignOff", e.target.value)} placeholder="Best regards," />
             </Field>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>Professional bio <span className="text-muted-foreground">(optional)</span></Label>
+              <Textarea rows={3} value={profile.professionalBio} onChange={(e) => setField("professionalBio", e.target.value)} placeholder="A short factual description of your work." />
+            </div>
+            <Field label="Default currency">
+              <Input value={profile.defaultCurrency} onChange={(e) => setField("defaultCurrency", e.target.value)} placeholder="EGP" />
+            </Field>
+            <Field label="Default payment terms" optional>
+              <Input value={profile.defaultPaymentTerms} onChange={(e) => setField("defaultPaymentTerms", e.target.value)} placeholder="50% upfront, 50% on delivery" />
+            </Field>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>Common services <span className="text-muted-foreground">(optional)</span></Label>
+              <Textarea rows={2} value={profile.commonServices} onChange={(e) => setField("commonServices", e.target.value)} placeholder="List services you commonly offer." />
+            </div>
             <div className="space-y-1.5 sm:col-span-2">
               <Label>Default CTA <span className="text-muted-foreground">(optional)</span></Label>
               <Input value={profile.defaultCta} onChange={(e) => setField("defaultCta", e.target.value)} placeholder="Would you be open to a short call next week?" />

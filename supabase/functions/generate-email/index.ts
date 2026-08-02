@@ -44,6 +44,20 @@ function cleanText(value: unknown, max = 4000) {
 }
 
 function sanitizeInput(input: EmailGenerationRequest): EmailGenerationRequest {
+  const validWorkflows = ["client_proposal", "proposal_follow_up", "project_update", "payment_reminder", "revision_request", "client_complaint", "custom"];
+  const workflow = validWorkflows.includes(input.workflow || "") ? input.workflow : "custom";
+  const clientContext = input.clientContext ? {
+    clientName: cleanText(input.clientContext.clientName, 200),
+    company: cleanText(input.clientContext.company, 200),
+    project: cleanText(input.clientContext.project, 300),
+    service: cleanText(input.clientContext.service, 300),
+    projectStatus: cleanText(input.clientContext.projectStatus, 500),
+    paymentStatus: cleanText(input.clientContext.paymentStatus, 500),
+    deadline: cleanText(input.clientContext.deadline, 120),
+    amount: cleanText(input.clientContext.amount, 120),
+    importantFacts: cleanText(input.clientContext.importantFacts, 2000),
+    nextAction: cleanText(input.clientContext.nextAction, 500),
+  } : undefined;
   return {
     ...input,
     senderRole: cleanText(input.senderRole, 300),
@@ -65,6 +79,8 @@ function sanitizeInput(input: EmailGenerationRequest): EmailGenerationRequest {
     previousHistoryId: typeof input.previousHistoryId === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input.previousHistoryId)
       ? input.previousHistoryId
       : undefined,
+    workflow,
+    clientContext,
   };
 }
 
@@ -89,6 +105,8 @@ function inputSnapshot(input: EmailGenerationRequest) {
     cta: input.cta,
     context: input.context,
     avoid: input.avoid,
+    workflow: input.workflow,
+    clientContext: input.clientContext,
   };
 }
 
@@ -109,6 +127,10 @@ function historyInsertPayload(
     body,
     language: input.language,
     tone: input.tone ?? intelligence.analysis.tone ?? null,
+    workflow: input.workflow ?? "custom",
+    client_context: input.clientContext ?? {},
+    message_status: "draft",
+    last_used_at: new Date().toISOString(),
   };
 
   if (includeIntelligenceFields) {
@@ -159,7 +181,7 @@ serve(async (req) => {
     }
     if (!rateLimitAllowed) return json({ error: "rate_limit" }, 429);
 
-    let quota = 15;
+    let quota = 10;
     const { data: sub } = await admin
       .from("subscriptions")
       .select("status, current_period_end, plans(monthly_quota)")
@@ -195,7 +217,7 @@ serve(async (req) => {
 
     const { data: profile } = await admin
       .from("profiles")
-      .select("full_name, default_role, default_signature, locale, job_title, company, company_website, industry, country, preferred_signature, default_tone, default_language, linkedin_url, phone_number, preferred_pronouns, timezone, preferred_greeting, default_cta, default_sign_off")
+      .select("full_name, default_role, default_signature, locale, job_title, company, company_website, industry, country, preferred_signature, default_tone, default_language, linkedin_url, phone_number, preferred_pronouns, timezone, preferred_greeting, default_cta, default_sign_off, main_service, professional_bio, portfolio_url, default_currency, common_services, default_payment_terms")
       .eq("user_id", userId)
       .maybeSingle();
 
@@ -223,6 +245,12 @@ serve(async (req) => {
         preferredGreeting: profile?.preferred_greeting ?? undefined,
         defaultCta: profile?.default_cta ?? undefined,
         defaultSignOff: profile?.default_sign_off ?? undefined,
+        mainService: profile?.main_service ?? undefined,
+        professionalBio: profile?.professional_bio ?? undefined,
+        portfolioUrl: profile?.portfolio_url ?? undefined,
+        defaultCurrency: profile?.default_currency ?? undefined,
+        commonServices: profile?.common_services ?? undefined,
+        defaultPaymentTerms: profile?.default_payment_terms ?? undefined,
       },
     };
 

@@ -148,6 +148,11 @@ export type Database = {
           tone: string | null
           updated_at: string
           user_id: string
+          workflow: string
+          client_context: Json
+          message_status: string
+          outcome: string | null
+          last_used_at: string | null
         }
         Insert: {
           analysis?: Json
@@ -173,6 +178,11 @@ export type Database = {
           tone?: string | null
           updated_at?: string
           user_id: string
+          workflow?: string
+          client_context?: Json
+          message_status?: string
+          outcome?: string | null
+          last_used_at?: string | null
         }
         Update: {
           analysis?: Json
@@ -198,6 +208,11 @@ export type Database = {
           tone?: string | null
           updated_at?: string
           user_id?: string
+          workflow?: string
+          client_context?: Json
+          message_status?: string
+          outcome?: string | null
+          last_used_at?: string | null
         }
         Relationships: []
       }
@@ -369,6 +384,12 @@ export type Database = {
           preferred_signature: string | null
           default_cta: string | null
           default_sign_off: string | null
+          main_service: string | null
+          professional_bio: string | null
+          portfolio_url: string | null
+          default_currency: string | null
+          common_services: string | null
+          default_payment_terms: string | null
           timezone: string | null
           updated_at: string
           user_id: string
@@ -397,6 +418,12 @@ export type Database = {
           preferred_signature?: string | null
           default_cta?: string | null
           default_sign_off?: string | null
+          main_service?: string | null
+          professional_bio?: string | null
+          portfolio_url?: string | null
+          default_currency?: string | null
+          common_services?: string | null
+          default_payment_terms?: string | null
           timezone?: string | null
           updated_at?: string
           user_id: string
