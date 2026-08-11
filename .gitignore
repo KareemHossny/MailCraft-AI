@@ -7,6 +7,10 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Build/verification artifacts
+build-check*/
+build-verification/
+
 node_modules
 dist
 dist-ssr
