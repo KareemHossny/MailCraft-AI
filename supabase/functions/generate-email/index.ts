@@ -3,6 +3,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, json } from "../_shared/http.ts";
 import { generateEmailIntelligence } from "../_shared/email-intelligence-service.ts";
 import type { EmailGenerationRequest, EmailLanguage, EmailMode } from "../_shared/email-intelligence-types.ts";
+import { initMonitoring, captureException } from "../_shared/monitoring.ts";
+
+initMonitoring();
 
 type RawBody = Partial<EmailGenerationRequest>;
 
@@ -177,7 +180,7 @@ serve(async (req) => {
       .rpc("check_generation_rate_limit", { p_user_id: userId, p_max_requests: 6, p_window_seconds: 60 });
     if (rateLimitError) {
       console.error("generation rate limit check failed", rateLimitError);
-      return json({ error: "generation_failed" }, 500);
+      return json({ error: "generation_failed", details: rateLimitError.message }, 500);
     }
     if (!rateLimitAllowed) return json({ error: "rate_limit" }, 429);
 
@@ -334,6 +337,9 @@ serve(async (req) => {
     });
   } catch (e) {
     console.error("generate-email error", e);
+    if (!(e instanceof Error && e.name === "RateLimitError")) {
+      await captureException(e, { function: "generate-email", path: new URL(req.url).pathname });
+    }
     if (e instanceof Error && e.name === "RateLimitError") return json({ error: "rate_limit" }, 429);
     if (e instanceof Error && e.name === "BillingError") return json({ error: "credits_exhausted" }, 402);
     if (e instanceof Error && e.name === "ModelNotFoundError") {
@@ -347,6 +353,9 @@ serve(async (req) => {
     }
     if (e instanceof Error && e.message.includes("AI_API_KEY")) return json({ error: "ai_not_configured" }, 500);
     if (e instanceof Error && e.name === "AiProviderError") return json({ error: "ai_provider_error" }, 502);
-    return json({ error: "generation_failed" }, 500);
+    return json({
+      error: "generation_failed",
+      details: e instanceof Error ? `${e.name}: ${e.message}` : String(e),
+    }, 500);
   }
 });

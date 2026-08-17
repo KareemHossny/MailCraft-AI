@@ -1,6 +1,15 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, json } from "../_shared/http.ts";
+import {
+  PAYMOB_INTENTION_URL,
+  parseIntegrationIds,
+  buildCheckoutUrl,
+  buildIntentionPayload,
+} from "../_shared/paymob.ts";
+import { initMonitoring, captureException } from "../_shared/monitoring.ts";
+
+initMonitoring();
 
 function requiredEnv(name: string) {
   const value = Deno.env.get(name);
@@ -13,7 +22,7 @@ function splitName(value: string | null | undefined) {
   return { first_name: parts[0] || "MailCraft", last_name: parts.slice(1).join(" ") || "Customer" };
 }
 
-serve(async (req) => {
+export const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
@@ -25,8 +34,7 @@ serve(async (req) => {
     const serviceRoleKey = requiredEnv("SUPABASE_SERVICE_ROLE_KEY");
     const paymobSecretKey = requiredEnv("PAYMOB_SECRET_KEY");
     const paymobPublicKey = requiredEnv("PAYMOB_PUBLIC_KEY");
-    const paymobIntegrationIds = requiredEnv("PAYMOB_INTEGRATION_IDS")
-      .split(",").map((value) => Number(value.trim())).filter(Number.isInteger);
+    const paymobIntegrationIds = parseIntegrationIds(Deno.env.get("PAYMOB_INTEGRATION_IDS"));
     if (!paymobIntegrationIds.length) throw new Error("PAYMOB_INTEGRATION_IDS must contain at least one integration ID");
 
     const authClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authHeader } } });
@@ -51,26 +59,25 @@ serve(async (req) => {
 
     const reference = `mailcraft_${userId}_${crypto.randomUUID()}`;
     const customer = { ...splitName(profile?.full_name), email: userData.user.email };
-    const paymobResponse = await fetch("https://accept.paymob.com/v1/intention/", {
+    const paymobResponse = await fetch(PAYMOB_INTENTION_URL, {
       method: "POST",
       headers: { Authorization: `Token ${paymobSecretKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        amount: plan.paymob_amount_cents,
-        currency: "EGP",
-        payment_methods: paymobIntegrationIds,
-        items: [{ name: `MailCraft ${plan.name_en}`, amount: plan.paymob_amount_cents, description: `${plan.name_en} monthly plan`, quantity: 1 }],
-        billing_data: { ...customer, phone_number: "NA", street: "NA", city: "Cairo", country: "EG", state: "Cairo", postal_code: "00000" },
+      body: JSON.stringify(buildIntentionPayload({
+        amountCents: plan.paymob_amount_cents,
+        planName: plan.name_en,
+        integrationIds: paymobIntegrationIds,
         customer,
-        special_reference: reference,
-        extras: { merchant_order_id: reference, user_id: userId, plan_slug: plan.slug },
-        notification_url: `${supabaseUrl}/functions/v1/paymob-webhook`,
-        redirection_url: `${Deno.env.get("SITE_URL") || "https://ai-mailcraft.vercel.app"}/pricing?payment=pending`,
-      }),
+        reference,
+        userId,
+        planSlug: plan.slug,
+        supabaseUrl,
+        siteUrl: Deno.env.get("SITE_URL") || "https://ai-mailcraft.vercel.app",
+      })),
     });
     const payment = await paymobResponse.json().catch(() => ({}));
     if (!paymobResponse.ok || !payment.client_secret) {
       console.error("Paymob intention failed", paymobResponse.status, payment);
-      return json({ error: "payment_provider_error" }, 502);
+      return json({ error: "payment_provider_error", paymob_status: paymobResponse.status, paymob_detail: payment }, 502);
     }
 
     const { error: subscriptionError } = await admin.from("subscriptions").upsert({
@@ -84,10 +91,15 @@ serve(async (req) => {
     if (subscriptionError) return json({ error: "subscription_setup_failed" }, 500);
 
     const baseUrl = Deno.env.get("PAYMOB_BASE_URL") || "https://accept.paymob.com";
-    const checkoutUrl = `${baseUrl}/unifiedcheckout/?publicKey=${encodeURIComponent(paymobPublicKey)}&clientSecret=${encodeURIComponent(payment.client_secret)}`;
+    const checkoutUrl = buildCheckoutUrl(paymobPublicKey, payment.client_secret, baseUrl);
     return json({ checkoutUrl, plan: plan.slug });
   } catch (error) {
     console.error("create-payment failed", error);
+    await captureException(error, { function: "create-payment", path: new URL(req.url).pathname });
     return json({ error: "payment_setup_failed" }, 500);
   }
-});
+}
+
+if (import.meta.main) {
+  serve(handler);
+}

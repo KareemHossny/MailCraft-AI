@@ -12,7 +12,7 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "deploy:functions": "npx supabase@latest functions deploy generate-email --project-ref uwvschgthdsyevfhdtey --no-verify-jwt && npx supabase@latest functions deploy ai-content --project-ref uwvschgthdsyevfhdtey --no-verify-jwt && npx supabase@latest functions deploy verify-share-password --project-ref uwvschgthdsyevfhdtey --no-verify-jwt",
+    "deploy:functions": "npx supabase@latest functions deploy generate-email --project-ref uwvschgthdsyevfhdtey --no-verify-jwt && npx supabase@latest functions deploy ai-content --project-ref uwvschgthdsyevfhdtey --no-verify-jwt && npx supabase@latest functions deploy verify-share-password --project-ref uwvschgthdsyevfhdtey --no-verify-jwt && npx supabase@latest functions deploy create-payment --project-ref uwvschgthdsyevfhdtey --no-verify-jwt && npx supabase@latest functions deploy paymob-webhook --project-ref uwvschgthdsyevfhdtey --no-verify-jwt",
     "deploy:db": "npx supabase@latest db push --linked",
     "deploy:secrets": "npx supabase@latest secrets set --project-ref uwvschgthdsyevfhdtey --env-file .env",
     "deploy:supabase": "npm run deploy:db && npm run deploy:secrets && npm run deploy:functions",

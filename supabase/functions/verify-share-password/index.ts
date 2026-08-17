@@ -1,4 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { initMonitoring, captureException } from "../_shared/monitoring.ts";
+
+initMonitoring();
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -163,6 +166,7 @@ Deno.serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
+    await captureException(err, { function: "verify-share-password", path: new URL(req.url).pathname });
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

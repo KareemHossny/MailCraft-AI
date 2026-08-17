@@ -80,7 +80,8 @@ Paymob currently handles one-time checkout for a monthly access period. Automati
 | Payments | Paymob Intention API, Unified Checkout, HMAC webhook |
 | Export | TXT, jsPDF, DOCX |
 | Deployment | Vercel and Supabase |
-| Testing | Vitest and Testing Library |
+| Testing | Vitest + Testing Library (frontend), Deno tests (Edge Functions) |
+| CI | GitHub Actions: lint, typecheck, Vitest, Deno Edge Function tests, deploy |
 
 ## AI generation flow
 
@@ -161,6 +162,11 @@ PAYMOB_PUBLIC_KEY=your-paymob-public-key
 PAYMOB_INTEGRATION_IDS=123456
 PAYMOB_HMAC_SECRET=your-paymob-hmac-secret
 SITE_URL=https://your-production-domain.com
+
+# Optional error monitoring (Sentry). Leave unset to disable.
+SENTRY_DSN=https://<key>@<org>.ingest.sentry.io/<project>
+SENTRY_ENVIRONMENT=production
+SENTRY_RELEASE=mailcraft@1.0.0
 ```
 
 ## Local development
@@ -181,6 +187,23 @@ npm test -- --run
 npm run build
 ```
 
+## CI and quality
+
+Pull requests and pushes to `main` run `.github/workflows/ci.yml`:
+
+- `verify` — `npm run lint`, `npx tsc --noEmit -p tsconfig.app.json`, and `npm test` (Vitest).
+- `deno` — Deno tests for the Edge Functions in `supabase/functions` (`deno test supabase/functions`), covering payment URL/integration-ID handling, the AI timeout, and the generation fallback.
+- `deploy` — runs only on push to `main` after the above pass, and deploys all five Edge Functions.
+
+Local checks mirror CI:
+
+```powershell
+npm run lint
+npx tsc --noEmit -p tsconfig.app.json
+npm test -- --run
+deno test supabase/functions
+```
+
 ## Supabase deployment
 
 The configured project reference is stored in `supabase/config.toml`.
@@ -192,7 +215,7 @@ npx supabase@latest db push --linked --yes
 npx supabase@latest secrets set --project-ref uwvschgthdsyevfhdtey --env-file .env
 ```
 
-Deploy all Edge Functions explicitly:
+Deploy all Edge Functions explicitly (or use `npm run deploy:functions` which deploys the same five):
 
 ```powershell
 npx supabase@latest functions deploy generate-email --project-ref uwvschgthdsyevfhdtey --no-verify-jwt

@@ -77,6 +77,7 @@ export async function createJsonChatCompletion(messages: ChatMessage[], options:
         "X-Title": ai.appName,
       },
       body: JSON.stringify(body),
+      signal: AbortSignal.timeout(25000),
     });
 
     if (!response.ok) {

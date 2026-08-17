@@ -522,12 +522,12 @@ function applyQualityAssessment(
       overall: quality.overall,
     },
     analytics: {
-      ...output.analytics,
+      ...(output.analytics ?? { indicators: [] }),
       readability: dimension("readability"),
       cta_strength: dimension("cta"),
       response_likelihood: Math.round((dimension("cta") + dimension("grounding") + dimension("tone")) / 3),
       indicators: [
-        ...output.analytics.indicators,
+        ...(output.analytics?.indicators ?? []),
         clichesBeforeCleanup.length ? `Varied stock phrases: ${clichesBeforeCleanup.join(", ")}` : "Checked for common AI email clichés",
       ].slice(0, 5),
     },
@@ -755,9 +755,9 @@ function withValidation(
       unsupported_claims_removed: [...new Set(unsupportedClaimsRemoved)].slice(0, 8),
     },
     analytics: {
-      ...output.analytics,
+      ...(output.analytics ?? { indicators: [] }),
       indicators: [
-        ...output.analytics.indicators,
+        ...(output.analytics?.indicators ?? []),
         status === "passed"
           ? `Fact validation passed${attempts > 1 ? ` after ${attempts} attempts` : ""}`
           : "Conservative fallback used after fact validation",

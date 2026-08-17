@@ -2,6 +2,9 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { createJsonChatCompletion } from "../_shared/ai-provider.ts";
 import { corsHeaders, json } from "../_shared/http.ts";
+import { initMonitoring, captureException } from "../_shared/monitoring.ts";
+
+initMonitoring();
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -59,6 +62,9 @@ Rules:
     return json({ content });
   } catch (e) {
     console.error("ai-content error:", e);
+    if (!(e instanceof Error && e.name === "RateLimitError")) {
+      await captureException(e, { function: "ai-content", path: new URL(req.url).pathname });
+    }
     if (e instanceof Error && e.name === "RateLimitError") return json({ error: "Rate limit exceeded. Please try again in a moment." }, 429);
     if (e instanceof Error && e.name === "BillingError") return json({ error: "AI credits exhausted. Check your AI provider billing settings." }, 402);
     return json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);

@@ -1,6 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, json } from "../_shared/http.ts";
+import { initMonitoring, captureException } from "../_shared/monitoring.ts";
+
+initMonitoring();
 
 const hmacFields = [
   "amount_cents", "created_at", "currency", "error_occured", "has_parent_transaction", "id",
@@ -76,6 +79,7 @@ serve(async (req) => {
     return json({ received: true });
   } catch (error) {
     console.error("paymob-webhook failed", error);
+    await captureException(error, { function: "paymob-webhook", path: new URL(req.url).pathname });
     return json({ error: "webhook_failed" }, 500);
   }
 });
