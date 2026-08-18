@@ -1,5 +1,5 @@
 import { initMonitoring, captureException } from "./monitoring.ts";
-import { assertEquals } from "https://deno.land/std@0.168.0/assert/mod.ts";
+import { assertEquals } from "https://deno.land/std@0.168.0/testing/asserts.ts";
 import { stub } from "https://deno.land/std@0.168.0/testing/mock.ts";
 
 Deno.test("captureException is a no-op and never throws when SENTRY_DSN is unset", async () => {

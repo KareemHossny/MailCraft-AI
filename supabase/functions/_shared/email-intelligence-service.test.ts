@@ -1,5 +1,5 @@
 import { generateEmailIntelligence } from "./email-intelligence-service.ts";
-import { assertEquals, assertExists } from "https://deno.land/std@0.168.0/assert/mod.ts";
+import { assertEquals, assertExists } from "https://deno.land/std@0.168.0/testing/asserts.ts";
 import { stub } from "https://deno.land/std@0.168.0/testing/mock.ts";
 import type { EmailGenerationRequest } from "./email-intelligence-types.ts";
 

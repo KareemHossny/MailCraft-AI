@@ -4,7 +4,7 @@ import {
   buildCheckoutUrl,
   buildIntentionPayload,
 } from "./paymob.ts";
-import { assertEquals, assertExists } from "https://deno.land/std@0.168.0/assert/mod.ts";
+import { assertEquals, assertExists } from "https://deno.land/std@0.168.0/testing/asserts.ts";
 
 Deno.test("PAYMOB_INTENTION_URL targets v1/intention and has no trailing slash", () => {
   assertEquals(PAYMOB_INTENTION_URL, "https://accept.paymob.com/v1/intention");

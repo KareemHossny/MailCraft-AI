@@ -1,5 +1,5 @@
 import { createJsonChatCompletion } from "./ai-provider.ts";
-import { assertEquals, assertExists } from "https://deno.land/std@0.168.0/assert/mod.ts";
+import { assertEquals, assertExists } from "https://deno.land/std@0.168.0/testing/asserts.ts";
 import { stub } from "https://deno.land/std@0.168.0/testing/mock.ts";
 
 function withAiKey() {
